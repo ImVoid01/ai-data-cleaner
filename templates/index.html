@@ -1,26 +1,131 @@
-<!-- templates/index.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>CSV Uploader</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Password Strengthener with AI</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body>
-    <h1>Upload a CSV File</h1>
-    {% with messages = get_flashed_messages() %}
-    {% if messages %}
-    <ul>
-        {% for msg in messages %}
-        <li>{{ msg }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-    {% endwith %}
-    <form method="post" enctype="multipart/form-data">
-        <input type="file" name="file" accept=".csv" required>
-        <input type="submit" value="Upload">
+<body class="bg-gray-50 min-h-screen flex flex-col items-center p-6">
+
+    <h1 class="text-3xl font-bold mb-6 text-center text-gray-900">Password Strengthener with AI</h1>
+
+    <div class="bg-blue-50 border-l-4 border-blue-600 p-4 mb-6 rounded-md max-w-xl w-full">
+        <h2 class="text-xl font-semibold mb-2 text-blue-700">Tips for Creating a Strong Password</h2>
+        <ul class="list-disc list-inside text-blue-900 space-y-1">
+            <li>Use a mix of uppercase and lowercase letters.</li>
+            <li>Include numbers and special characters (like !, @, #, $).</li>
+            <li>Make your password at least 12 characters long.</li>
+            <li>Avoid common words or easily guessable information like your name or birth year.</li>
+            <li>Try using passphrases or combinations of unrelated words.</li>
+        </ul>
+    </div>
+
+    <form method="post" id="password-form" class="max-w-xl w-full">
+        <input type="text" name="password" id="password-input" placeholder="Enter your password idea" autocomplete="off"
+            required
+            class="w-full p-3 text-gray-900 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+        <div aria-hidden="true" class="w-full h-3 bg-gray-300 rounded mt-2">
+            <div id="strength-meter-fill" class="h-3 rounded transition-all duration-300 w-0 bg-red-600"></div>
+        </div>
+        <div id="strength-text" class="mt-1 font-semibold text-gray-800">Strength: </div>
+
+        <button type="submit" id="strengthen-btn" disabled
+            class="mt-4 px-5 py-2 bg-blue-600 text-white font-semibold rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors">
+            Strengthen Password
+        </button>
     </form>
+
+    {% if result %}
+    <div id="result-container"
+        class="mt-6 max-w-xl w-full flex items-center gap-3 bg-green-100 border border-green-400 text-green-800 font-semibold p-4 rounded-md">
+        <span id="result-text" class="break-words">{{ result }}</span>
+        <button class="copy-btn bg-green-600 text-white rounded px-3 py-1 hover:bg-green-700 transition-colors"
+            id="copy-btn" title="Copy to clipboard">
+            📋
+        </button>
+    </div>
+    <div id="copied-msg" class="text-green-600 font-normal mt-1 text-sm hidden">
+        Copied to clipboard!
+    </div>
+    {% endif %}
+
+    <script>
+        const passwordInput = document.getElementById("password-input");
+        const strengthMeterFill = document.getElementById("strength-meter-fill");
+        const strengthText = document.getElementById("strength-text");
+        const strengthenBtn = document.getElementById("strengthen-btn");
+
+        function calculatePasswordStrength(password) {
+            let score = 0;
+            if (!password) return 0;
+
+            if (password.length >= 8) score += 1;
+            if (password.length >= 12) score += 1;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
+            if (/\d/.test(password)) score += 1;
+            if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 1;
+
+            return score;
+        }
+
+        function updateStrengthMeter() {
+            const pw = passwordInput.value;
+            const score = calculatePasswordStrength(pw);
+
+            const widthPercent = (score / 5) * 100;
+            strengthMeterFill.style.width = widthPercent + "%";
+
+            let color = "bg-red-600";
+            let text = "Very Weak";
+            let enableButton = false;
+
+            if (score === 1) {
+                color = "bg-red-600";
+                text = "Weak";
+            } else if (score === 2 || score === 3) {
+                color = "bg-yellow-400";
+                text = "Medium";
+                enableButton = true;
+            } else if (score >= 4) {
+                color = "bg-green-600";
+                text = "Strong";
+                enableButton = true;
+            }
+
+            strengthMeterFill.className = "h-3 rounded transition-all duration-300 " + color;
+            strengthText.textContent = "Strength: " + text;
+
+            strengthenBtn.disabled = !enableButton;
+        }
+
+        passwordInput.addEventListener("input", updateStrengthMeter);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const copyBtn = document.getElementById("copy-btn");
+            const resultText = document.getElementById("result-text");
+            const copiedMsg = document.getElementById("copied-msg");
+
+            if (copyBtn && resultText) {
+                copyBtn.addEventListener("click", () => {
+                    const textToCopy = resultText.textContent || resultText.innerText;
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        copiedMsg.classList.remove("hidden");
+                        setTimeout(() => {
+                            copiedMsg.classList.add("hidden");
+                        }, 2000);
+                    }).catch(err => {
+                        alert("Failed to copy: " + err);
+                    });
+                });
+            }
+        });
+    </script>
+
 </body>
 
 </html>
